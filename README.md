@@ -36,19 +36,10 @@ The necessary steps and libraries for simulating these systems in Python:
 
 
 <p align="center">
-  <video width="320" height="240" controls>
-    <source src="manimation_Mass(0.65)_k(5.5)_damping(0.3).mp4" type="video/mp4">
-    <source src="movie.ogg" type="video/ogg">
-    Tarayıcınız video etiketini desteklemiyor.
-  </video>
+  <img src="animation_1.gif" />
 </p>
-
-
 
 <p align="center">
-  <video width="320" height="240" controls>
-    <source src="animation_Mass(0.65)_k(5.5)_damping(0.8)" type="video/mp4">
-    <source src="movie.ogg" type="video/ogg">
-    Tarayıcınız video etiketini desteklemiyor.
-  </video>
+  <img src="animation_2.gif" />
 </p>
+
