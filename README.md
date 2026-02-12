@@ -6,7 +6,7 @@
 
 <p align="center">
 🚀 <b>For a more detailed analysis and interactive visualizations, visit the project website:</b>
-<a href="https://spring.brky.ai"><b>spring.brky.ai</b></a>
+<a href="https://springmass.brky.ai"><b>springmass.brky.ai</b></a>
 </p>
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776ab?logo=python&logoColor=white)
@@ -83,16 +83,6 @@ python spring_mass_system.py
 python animate_system.py
 ```
 
-## Web Interface
-
-The interactive web page (`index.html`) includes:
-- Real-time canvas animation with spring coil visualization
-- Plotly.js charts: displacement, phase space, velocity, energy
-- Parameter sweep comparisons across damping regimes
-- Interactive simulator with adjustable parameters
-- Bilingual TR/EN support
-
-Deploy by uploading `index.html` + `brky-logo.png` + `berkay.jpg` to the target subdomain.
 
 ## Author
 
