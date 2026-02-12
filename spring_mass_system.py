@@ -1,136 +1,129 @@
 """
-Berkay Yılmaz @2024
-github.com/berkayilmaaz
-linkedin.com/berkayilmaaz
+Spring-Mass System with Viscous Damping
+Euler integration + static plots for underdamped, critical, and overdamped regimes.
+
+Berkay Yılmaz — brky.ai
 """
 import numpy as np
 import matplotlib.pyplot as plt
+from dataclasses import dataclass
 
 
+@dataclass
 class Spring:
-    def __init__(self, spring_constant, natural_length):
-        self.k = spring_constant       # Spring constant (N/m)
-        self.L = natural_length        # Natural length of the spring (m)
- 
-    def force(self, extension):
-        return -self.k * (extension - self.L)  # Spring force (N)
+    k: float              # spring constant [N/m]
+    natural_length: float  # rest length [m]
 
-    def extension(self, displacement):
-        # Calculate the extension of the spring from its natural length
-        return displacement + self.L
+    def force(self, displacement: float) -> float:
+        """Restoring force relative to equilibrium (gravity already factored out)."""
+        return -self.k * displacement
 
-class Mass:
-    def __init__(self, mass):
-        self.m = mass                 # Mass of the object (kg)
 
-class Damping:
-    def __init__(self, damping_coefficient):
-        self.c = damping_coefficient  # Damping coefficient (s/m)
+@dataclass
+class Damper:
+    c: float  # damping coefficient [N·s/m]
 
-    def force(self, velocity):
-        return -self.c * velocity     # Damping force (N)
+    def force(self, velocity: float) -> float:
+        return -self.c * velocity
 
-class SpringMassSystem:  
-    def __init__(self, mass, spring, damping, gravity=9.81):
-        self.mass = mass
-        self.spring = spring
-        self.damping = damping
-        self.gravity = gravity        # Acceleration due to gravity (m/s^2)
 
-    def equation(self, x, v):
-        spring_force = self.spring.force(x)
-        damping_force = self.damping.force(v)
-        net_force = spring_force + damping_force - self.mass.m * self.gravity
-        return net_force / self.mass.m # Acceleration (m/s^2)
+@dataclass
+class SpringMassSystem:
+    mass: float
+    spring: Spring
+    damper: Damper
 
-    def solve_euler(self, initial_displacement, initial_velocity, t_span, dt):
+    @property
+    def omega0(self) -> float:
+        return np.sqrt(self.spring.k / self.mass)
+
+    @property
+    def zeta(self) -> float:
+        return self.damper.c / (2 * np.sqrt(self.spring.k * self.mass))
+
+    def acceleration(self, x: float, v: float) -> float:
+        net_force = self.spring.force(x) + self.damper.force(v)
+        return net_force / self.mass
+
+    def solve_euler(self, x0: float, v0: float, t_span: tuple, dt: float):
+        """Forward Euler integration for damped harmonic oscillator (relative to equilibrium)."""
         num_steps = int((t_span[1] - t_span[0]) / dt)
         t = np.linspace(t_span[0], t_span[1], num_steps)
-        y = np.zeros(num_steps)
+        x = np.zeros(num_steps)
         v = np.zeros(num_steps)
         a = np.zeros(num_steps)
-        pe = np.zeros(num_steps)
-        ke = np.zeros(num_steps)
-        energy_loss = np.zeros(num_steps)
 
-        y[0], v[0] = initial_displacement, initial_velocity
-        pe[0] = 0.5 * self.spring.k * (y[0] - self.spring.L)**2
-        ke[0] = 0.5 * self.mass.m * v[0]**2
+        x[0], v[0] = x0, v0
 
         for i in range(1, num_steps):
-            a[i-1] = self.equation(y[i-1], v[i-1])
-            y[i] = y[i-1] + v[i-1] * dt
-            v[i] = v[i-1] + a[i-1] * dt
-            pe[i] = 0.5 * self.spring.k * (y[i] - self.spring.L)**2    #1/2kx^2
-            ke[i] = 0.5 * self.mass.m * v[i]**2                        #1/2mv^2
-            energy_loss[i] = energy_loss[i-1] + self.damping.force(v[i-1]) * v[i-1] * dt
+            a[i - 1] = self.acceleration(x[i - 1], v[i - 1])
+            v[i] = v[i - 1] + a[i - 1] * dt
+            x[i] = x[i - 1] + v[i - 1] * dt
 
-        return t, y, v, a, pe, ke, energy_loss
-    
-    
-def plot_motion(t, y, v, a, pe, ke, energy_loss):
+        # last acceleration value (original code left this as zero)
+        a[-1] = self.acceleration(x[-1], v[-1])
+
+        pe = 0.5 * self.spring.k * x ** 2
+        ke = 0.5 * self.mass * v ** 2
+        te = pe + ke
+
+        # cumulative energy dissipated by damper
+        power_loss = self.damper.c * v ** 2
+        energy_loss = np.cumsum(power_loss) * dt
+
+        return t, x, v, a, pe, ke, te, energy_loss
+
+
+def plot_motion(t, x, v, a, pe, ke, te, energy_loss):
     fig, axs = plt.subplots(3, 2, figsize=(14, 12))
 
-    # Displacement vs Time
-    axs[0, 0].plot(t, y, 'r-')
+    axs[0, 0].plot(t, x, 'r-')
     axs[0, 0].set_xlabel('Time (s)')
     axs[0, 0].set_ylabel('Displacement (m)')
     axs[0, 0].set_title('Displacement vs Time')
 
-    # Phase Space Plot
-    axs[0, 1].plot(y, v, 'b-')
+    axs[0, 1].plot(x, v, 'b-')
     axs[0, 1].set_xlabel('Displacement (m)')
     axs[0, 1].set_ylabel('Velocity (m/s)')
-    axs[0, 1].set_title('Phase Space Plot')
+    axs[0, 1].set_title('Phase Space')
 
-    # Velocity and Acceleration vs Time
-    ax2 = axs[1, 0].twinx()
     axs[1, 0].plot(t, v, 'b-', label='Velocity')
+    ax2 = axs[1, 0].twinx()
     ax2.plot(t, a, 'g-', label='Acceleration')
     axs[1, 0].set_xlabel('Time (s)')
     axs[1, 0].set_ylabel('Velocity (m/s)')
     ax2.set_ylabel('Acceleration (m/s²)')
-    axs[1, 0].set_title('Velocity and Acceleration vs Time')
+    axs[1, 0].set_title('Velocity & Acceleration')
     axs[1, 0].legend(loc='upper left')
     ax2.legend(loc='upper right')
 
-    # Potential and Kinetic Energy vs Time
-    axs[1, 1].plot(t, pe, 'm-', label='Potential Energy')
-    axs[1, 1].plot(t, ke, 'c-', label='Kinetic Energy')
+    axs[1, 1].plot(t, pe, 'm-', label='PE (elastic)')
+    axs[1, 1].plot(t, ke, 'c-', label='KE')
     axs[1, 1].set_xlabel('Time (s)')
     axs[1, 1].set_ylabel('Energy (J)')
-    axs[1, 1].set_title('Potential and Kinetic Energy vs Time')
+    axs[1, 1].set_title('Potential & Kinetic Energy')
     axs[1, 1].legend()
 
-    # Energy Loss vs Time
     axs[2, 0].plot(t, energy_loss, 'y-')
     axs[2, 0].set_xlabel('Time (s)')
-    axs[2, 0].set_ylabel('Energy Loss (J)')
-    axs[2, 0].set_title('Energy Loss vs Time')
+    axs[2, 0].set_ylabel('Cumulative Loss (J)')
+    axs[2, 0].set_title('Energy Dissipated by Damper')
 
-    # Total Energy (Potential + Kinetic) vs Time
-    total_energy = pe + ke  
-    axs[2, 1].plot(t, total_energy, 'k-', label='Total Energy')
+    axs[2, 1].plot(t, te, 'k-', label='Total Mechanical')
     axs[2, 1].set_xlabel('Time (s)')
     axs[2, 1].set_ylabel('Energy (J)')
     axs[2, 1].set_title('Total Energy vs Time')
     axs[2, 1].legend()
-    
-
 
     plt.tight_layout()
     plt.show()
-    
 
 
-mass = Mass(0.65)
-spring = Spring(5.5, 0.3)
-damping = Damping(1)
-system = SpringMassSystem(mass, spring, damping)
-t, y, v, a, pe, ke, energy_loss = system.solve_euler(0.0, 0, [0, 10], 0.01)
-
-plot_motion(t, y, v, a, pe, ke, energy_loss)
-
-
-
-
+if __name__ == '__main__':
+    system = SpringMassSystem(
+        mass=0.65,
+        spring=Spring(k=5.5, natural_length=0.3),
+        damper=Damper(c=1.0),
+    )
+    t, x, v, a, pe, ke, te, eloss = system.solve_euler(0.0, 0.0, [0, 10], 0.01)
+    plot_motion(t, x, v, a, pe, ke, te, eloss)

@@ -1,45 +1,100 @@
+# Damped Spring-Mass Simulation
+
+<p align="center">
+<img src="assets/brky-logo.png" height="120">
+</p>
+
+<p align="center">
+🚀 <b>For a more detailed analysis and interactive visualizations, visit the project website:</b>
+<a href="https://spring.brky.ai"><b>spring.brky.ai</b></a>
+</p>
+
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776ab?logo=python&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Stable-brightgreen)
 
 ---
 
-# README: Animation and Spring-Mass Systems
+A numerical and analytical study of the damped harmonic oscillator, comparing forward Euler integration with exact solutions across three damping regimes: underdamped, critically damped, and overdamped.
 
-## Overview
-This document details the mathematical foundations and Python implementation of animation and spring-mass systems, which are widely used in physics and computer graphics.
+## Physics
 
-### Animation System
-- **Description**: This system analyzes and visualizes the motion of objects over time.
-- **Key Concepts**: 
-  - Motion interpolation
-  - Timeline and animation loop management
+The system follows the equation of motion:
 
-### Spring-Mass System
-- **Description**: The spring-mass system is a physical model where a mass is attached to a spring, encompassing concepts like harmonic motion and damping.
-- **Key Concepts**: 
-  - Harmonic motion
-  - Spring constant and mass
-  - Damping and resonance
+```
+m·ẍ + c·ẋ + k·x = 0
+```
 
-## Mathematical Foundations
-The fundamental mathematical concepts necessary for understanding these systems are:
+where `x` is displacement from equilibrium, `m` is mass, `c` is the damping coefficient, and `k` is the spring constant. Displacement is measured relative to the static equilibrium position, which eliminates gravity from both the EOM and energy expressions.
 
-1. **Newton's Second Law of Motion**: `F = ma` (Force = mass x acceleration)
-2. **Harmonic Motion**: The basic equation for the spring-mass system is `m·y'' + k·y = 0`.
-3. **Damping**: Damping refers to the dissipation of energy through friction or other processes, represented by the equation `m·y'' + c·y' + k·y = 0`.
-4. **Resonance**: At the system's natural frequency, when the frequency of the applied force matches, maximum amplitude is achieved.
+The damping ratio `ζ = c / (2√(km))` determines the qualitative behavior:
 
-## Implementation and Libraries
-The necessary steps and libraries for simulating these systems in Python:
+| Regime | Condition | Behavior |
+|--------|-----------|----------|
+| Underdamped | ζ < 1 | Oscillatory decay with envelope e^(−ζω₀t) |
+| Critically damped | ζ = 1 | Fastest aperiodic return to equilibrium |
+| Overdamped | ζ > 1 | Sluggish exponential settling |
 
-2. **NumPy**: A library for scientific computations. It can be installed with the command `pip install numpy`.
-3. **Matplotlib**: Used for drawing graphs. Installable with `pip install matplotlib`.
-4. **SciPy**: Provides advanced tools for scientific calculations. Install with `pip install scipy`.
+## Numerical Method
 
+Forward Euler integration with first-order explicit scheme:
 
-<p align="center">
-  <img src="animation_1.gif" />
-</p>
+```
+v[n+1] = v[n] + (−k·x[n] − c·v[n]) / m · Δt
+x[n+1] = x[n] + v[n] · Δt
+```
 
-<p align="center">
-  <img src="animation_2.gif" />
-</p>
+Stability condition: `Δt < 2 / (ζω₀)`.
 
+## Default Parameters
+
+| Symbol | Value | Description |
+|--------|-------|-------------|
+| m | 0.65 kg | Mass |
+| k | 5.5 N/m | Spring constant |
+| c | 0.8 N·s/m | Damping coefficient |
+| x₀ | 0.15 m | Initial displacement |
+| ẋ₀ | 0.0 m/s | Initial velocity |
+| Δt | 0.01 s | Time step |
+
+Computed: ω₀ ≈ 2.91 rad/s, ζ ≈ 0.212 (underdamped).
+
+## Project Structure
+
+```
+.
+├── spring_mass_system.py   # physics engine + static plots
+├── animate_system.py       # matplotlib animation (spring visualization)
+├── requirements.txt        # numpy, matplotlib, scipy
+├── README.md
+├── assets/
+│   └── brky-logo.png
+├── animation_1.gif
+└── animation_2.gif
+```
+
+## Usage
+
+```bash
+git clone https://github.com/berkayilmaaz/Spring-Mass-Simulation.git
+cd Spring-Mass-Simulation
+pip install -r requirements.txt
+python spring_mass_system.py
+python animate_system.py
+```
+
+## Web Interface
+
+The interactive web page (`index.html`) includes:
+- Real-time canvas animation with spring coil visualization
+- Plotly.js charts: displacement, phase space, velocity, energy
+- Parameter sweep comparisons across damping regimes
+- Interactive simulator with adjustable parameters
+- Bilingual TR/EN support
+
+Deploy by uploading `index.html` + `brky-logo.png` + `berkay.jpg` to the target subdomain.
+
+## Author
+
+**Berkay Yılmaz** — Physics, Marmara University  
+[brky.ai](https://brky.ai) · [contact@brky.ai](mailto:contact@brky.ai)
